@@ -56,7 +56,7 @@ BottomCondition = atrp > ATRhighLine and MyWilliams < Wlowline
 //графическое отображение индикатора "дна рынка"
 bgcolor(BottomCondition ? color.red : na, transp=0, title = "Market Bottom")
 
-//Рисуем график ATR %R - по умолчанию не отображаются, т к предполагается, что данный индикатор будет накладываться на график цены
+//Рисуем график ATR %R - по умолчанию не отображается, т к предполагается, что данный индикатор будет накладываться на график цены
 // plot(ATRhighLine, title="overbought", transp=0)
 // plot(ATRlowLine, title= "oversold", transp=0)
 // plot(atrp, linewidth=1, transp=0)
