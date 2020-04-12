@@ -1,0 +1,64 @@
+// This source code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © dzhechkov
+// @version=4
+// Индикатор написан по мотивам видео-ролика: https://www.youtube.com/watch?v=zf26u-2I1yE в попытке воспроизвести алгоритм, который в нем представлен
+// в двух словах: по наблюдению Adam Khoo, на SPX дно рынка наблюдается когда индикатор Williams %R (52 недели) показывает перепроданность
+// а индикатор "относительный ATR" показывает сильную волотальность
+// если найти индикатор Williams %R в списке встроенных индикторов tradingview достаточно легко
+// то индиктор "относительный ATR", о котором говорит Адам, в TradingView отсутствует
+
+// формула для вычисления относительного ATR достаточно простая: atrp = percentrank(atr(13),52). 
+// Сначала считается абсолютное значение средней волатильности за некоторое количество недель назад 
+// (в примере Адама - это 13 недель) - это и есть ATR. В скрипте ниже предлагаются 2 варианта расчета: на базе EMA и SMA
+// После подсчета ATR вычисляется какое относительное количество (в процентах) значений ATR за предыдущие 52 недели были меньше или равны текущему значению ATR. 
+// При этом аномально высокой текущая ATR будет считаться если > 80% предыдущих 52-х значний ATR были меньше или равны текущему значению ATR.
+
+// однако, не смотря на простоту формулы, результаты отработки данного алгоритма не совпадают с теми, что демонстрирует Адам в своем видео-ролике
+// скорее всего под именем "относительного ATR" Адам использует какой-то другой индикатор
+
+// Ниже привожу сам скрипт с комментариями
+// будем накладывать значение индикатора "дна рынка" сразу на график цены, поэтому параметр overlay=true
+study(title="DZ Market Bottom Indicator", shorttitle="Market Bottom Indicator (Williams %R + ATR %R)", overlay=true)
+
+// определяем функцию Williams %R 
+WilliamsR(highline, lowline, length) =>
+    upper    = highest(length)
+    lower    = lowest(length)
+    output   = 100* (close - upper) / (upper - lower) + 100
+
+//определяем значения по умолчанию для порогов сильной и слабой относительной волатильности ATR %R
+ATRhighLine = input(80, title="ATR percent High Limit")
+ATRlowLine  = input(20, title ="ATR percent Low Limit")
+
+//определяем количество свечей для расчета ATR и ATR %R
+atrlen = input(13, minval=1, title = "ATR Length")
+lookback = input(52, minval=1, title ="Length")
+
+//определяем значения по умолчанию для порогов перекупленности/перепроданности для Williams %R
+Whighline = input(80, title="Williams %R Overbought Limit")
+Wlowline = input(20, title="Williams %R Oversoled Limit")
+
+//опредеяем текущую цену (выбираем по закрытию свечи)
+source = close
+
+//atrp считаем на основе RMA (используем стандартную функцию ATR)
+//atrp = percentrank(atr(atrlen),lookback)
+
+//atrp считаем на основе EMA
+atrp = percentrank(ema(tr(true),atrlen),lookback)
+
+//значение индикатора Williams %R в текущий момент времени
+MyWilliams = WilliamsR(Whighline, Wlowline, lookback)
+
+//условие дна рынка когда на ТФ Н индикатор Williams %R (52 недели) перепродан (<20%), и при этом ATR %R находится на максимуме (>80%)
+BottomCondition = atrp > ATRhighLine and MyWilliams < Wlowline
+
+//графическое отображение индикатора "дна рынка"
+bgcolor(BottomCondition ? color.red : na, transp=0, title = "Market Bottom")
+
+//Рисуем график ATR %R - по умолчанию не отображаются, т к предполагается, что данный индикатор будет накладываться на график цены
+// plot(ATRhighLine, title="overbought", transp=0)
+// plot(ATRlowLine, title= "oversold", transp=0)
+// plot(atrp, linewidth=1, transp=0)
+
+
